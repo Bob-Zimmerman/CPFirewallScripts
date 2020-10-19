@@ -6,19 +6,19 @@ Check Point's OS, GAiA, is based on Redhat Enterprise Linux, or RHEL. They use t
 Unfortunately, this difference matters, and I can't paper over it in code. The first line of a shell script has to be a path to the interpreter. RHEL 5.2 has the interpreters in /bin, and RHEL 7.6 has them in /usr/bin. Scripts committed to this repository will target 7.6.
 
 Versions known to use RHEL 7.6:
-R81
-R80.40
-R80.30 management
+* R81
+* R80.40
+* R80.30 management
 
 Versions known to use RHEL 5.2:
-R80.30 firewall
-R80.20
-R80.10
-R80
-R77.30
-R77.20
-R77.10
-R77
+* R80.30 firewall
+* R80.20
+* R80.10
+* R80
+* R77.30
+* R77.20
+* R77.10
+* R77
 
 ## Important!
 To run these scripts on RHEL 5.2, you will need to change the first line from `#!/usr/bin/env bash` to `#!/bin/env bash`
