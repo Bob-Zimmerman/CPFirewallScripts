@@ -41,7 +41,7 @@ DEST_ADDR="[0-9a-f]+"
 DEST_PORT="[0-9a-f]+"
 PROTOCOL="[0-9a-f]+"
 
-while getopts "lx:v:s:S:d:D:P:h" NUKE_OPTION; do
+while getopts "lxv:s:S:d:D:P:h" NUKE_OPTION; do
 	case $NUKE_OPTION in
 	l)
 		OUTPUT="list"
