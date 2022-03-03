@@ -43,11 +43,11 @@ PROTOCOL="[0-9a-f]+"
 
 while getopts "lxv:s:S:d:D:P:h" NUKE_OPTION; do
 	case $NUKE_OPTION in
-	l)
-		OUTPUT="list"
-		;;
 	x)
 		OUTPUT="delete"
+		;;
+	l)
+		OUTPUT="list"
 		;;
 	v)
 		VSID="${OPTARG}"
