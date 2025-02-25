@@ -1,33 +1,14 @@
 # CPFirewallScripts
-Scripts for use on Check Point firewalls.
+Scripts for use on Check Point firewalls and management servers.
 
-Check Point's OS, GAiA, is based on Redhat Enterprise Linux, or RHEL. They use two versions currently: RHEL 5.2 and RHEL 7.6. You can tell which you are using by looking at the kernel version returned when you run `uname -a`. If it says 2.6.18-92cp, you are running RHEL 5.2. If it says 3.10.0-957, you are on RHEL 7.6.
+# For Firewalls
+## nukeCons.sh
+Dumps connections table entries which match a filter you specify with
+the options. It was originally written to delete them, but does not
+delete anything by default.
 
-Unfortunately, this difference matters, and I can't paper over it in code. The first line of a shell script has to be a path to the interpreter. RHEL 5.2 has the interpreters in /bin, and RHEL 7.6 has them in /usr/bin. Scripts committed to this repository will target 7.6.
-
-Versions known to use RHEL 7.6:
-* R81
-* R80.40
-* R80.30 management
-
-Versions known to use RHEL 5.2:
-* R80.30 firewall
-* R80.20
-* R80.10
-* R80
-* R77.30
-* R77.20
-* R77.10
-* R77
-
-## Important!
-To run these scripts on RHEL 5.2, you will need to change the first line from `#!/usr/bin/env bash` to `#!/bin/env bash`
-
-# nukeCons.sh
-## Usage
-This script dumps connections table entries which match a filter you specify with the options.
-
-```[Bob_Zimmerman@MyFirewall]# ./nukeCons.sh -h
+### Usage
+```[Expert@MyFirewall]# ./nukeCons.sh -h
 Note: this script must be run as root.
 
 Usage:
@@ -45,4 +26,97 @@ Usage:
 	-D port		Search for the specified destination port.
 	-P protocol	Search for the specified IP protocol.
 	-h		Print this usage information.
+```
+
+## scanInts.sh
+Iterates through all of the interfaces on a firewall and does an ARP
+sweep of each one (using ping to trigger ARP). It then reports which
+interfaces' networks are empty. It looks at all interfaces with names
+which do not start with 'lo' or 'wrp'.
+
+### Usage
+```
+[Expert@MyFirewall-s01-01]# ./scanInts.sh 
+Mgmt has no IP address. Skipping.
+2 items in Sync 192.0.2.1/24
+bond2 has no IP address. Skipping.
+1 items in bond2.100 172.31.100.1/24
+1 items in bond2.101 172.31.101.1/24
+erspan0 has no IP address. Skipping.
+eth1-Sync has no IP address. Skipping.
+eth2 has no IP address. Skipping.
+eth3 has no IP address. Skipping.
+eth4 has no IP address. Skipping.
+eth5 has no IP address. Skipping.
+gre0 has no IP address. Skipping.
+gretap0 has no IP address. Skipping.
+4 items in magg1 10.0.1.252/24
+```
+
+## vsClish
+Lets you run commands in clish (like `clish -c "..."`) in VSs other
+than 0. Specify a VSID as the first argument to run the commands in
+another VS without switching to it. Leave out the VSID to use the VSID
+you are currently in.
+
+### Usage
+```
+[Expert@MyFirewall-01:0]# clish -c "show router-id"
+
+Active Router ID:      10.15.30.45
+Configured Router ID:  none
+
+[Expert@MyFirewall-01:0]# ./vsClish.sh 5 show router-id
+Context is set to vsid 5
+
+Active Router ID:      10.32.64.1
+Configured Router ID:  none
+
+Done.                                                        
+[Expert@MyFirewall-01:2]# vsenv 5
+Context is set to Virtual Device MyFirewall-01_FifthVS (ID 5).
+[Expert@MyFirewall-01:2]# ./vsClish.sh show router-id
+Context is set to vsid 5
+
+Active Router ID:      10.32.64.1
+Configured Router ID:  none
+
+Done.                                                        
+```
+
+# For Management Servers
+## clusterDiff.sh
+Runs a script you provide on each member of every cluster reporting to
+the management where it is run, then uses diff to find differences in
+the output. You can specify your own script after `cat << 'EOF' > "${scriptFile}"`
+and before the line which has `EOF` by itself. The script I have
+provided there dumps the clish config and finds differences. It works on
+normal clusters and VSX clusters. NOTE: This does not support ElasticXL
+and does not work on clusters with more than two members.
+
+## configDiffEmail.sh
+A simple wrapper to email the cluster member differences through the
+mail relay defined in `MTA` to the email addresses in `mailRecipients`.
+
+## onEachFirewall.sh
+Takes a file you provide, copies it to all firewalls reporting to this
+management server, runs it, and shows the output.
+
+### Usage
+Here's an example script I use which gets the hostname, model, major version, jumbo, and uptime.
+```
+[Expert@MyMDS]# cat <<'EOF' >"${scriptFile}"
+> printf "%-25s %6s %-6s %3s %-20s" \
+> $(hostname) \
+> $(clish -c "show asset system" | egrep -q "^Model";if [ $? -eq 0 ];then clish -c "show asset system" | egrep "^Model" | awk '{print $NF}';else clish -c "show asset system" | egrep "^Platform" | cut -d" " -f2 | cut -c 1-5;fi) \
+> $(fw ver | awk '{print $7}') \
+> $(jumbo=$(cpinfo -y fw1 2>/dev/null | grep JUMBO | grep Take | awk '{print $NF}');echo "${jumbo:-0}") \
+> "$(uptime | cut -d, -f1 | xargs)"
+> EOF
+[Expert@MyMDS]# /var/log/scripts/onEachFirewall.sh -v "${scriptFile}";/usr/bin/rm "${scriptFile}"
+        SomeCMA     10.20.30.28: FirstCluster-01             6900 R81.20  92 14:25:19 up 161 days
+        SomeCMA     10.20.30.29: FirstCluster-02             6900 R81.20  92 14:25:22 up 161 days
+        SomeCMA     10.12.4.197: SecondCluster-01            6800 R81.20  92 14:25:24 up 27 days 
+        SomeCMA     10.12.4.198: SecondCluster-02            6800 R81.20  92 14:25:27 up 27 days 
+...
 ```

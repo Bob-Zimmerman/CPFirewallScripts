@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 ################################################################################
 ## This script iterates through all of the interfaces on a firewall and does an
 ## ARP sweep of each one (using ping to trigger ARP). It then reports which
@@ -131,10 +131,10 @@ scanInterfaces()
 	## entries, even if the admin says to delete them.
 	for interfaceToScan in $(ip link show | egrep "^[0-9]" | cut -d" " -f2 | cut -d@ -f1 | sed 's#:##' | egrep -v "^(lo[0-9]*|wrp)" | sort)
 		do
-		rawAddr=$(/bin/cpip addr show $interfaceToScan | grep inet | awk '{print $2}')
+		rawAddr=$(/sbin/ip addr show $interfaceToScan | grep inet | awk '{print $2}')
 		if [ "$rawAddr" != "" ]; then
 			scanNetwork "$rawAddr"
-			sleep 600s
+			sleep 300s
 		else
 			echo -n "$interfaceToScan"
 			if [ -d /proc/vrf ] && [ $(ls /proc/vrf/ | wc -l) -gt 1 ]; then

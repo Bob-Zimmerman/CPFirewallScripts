@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 
 printUsage()
 {
@@ -89,7 +89,7 @@ done
 if [ $(cpprod_util FwIsVSX) == "0" ]; then
 	FW_TAB_CMD="fw tab"
 else
-	FW_TAB_CMD="fw -vs ${VSID} tab"
+	FW_TAB_CMD="ip netns exec $(printf "CTX%05d" ${VSID}) fw tab"
 fi
 
 CONNECTIONS=$(\
