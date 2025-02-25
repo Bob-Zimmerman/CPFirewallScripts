@@ -53,7 +53,7 @@ gretap0 has no IP address. Skipping.
 4 items in magg1 10.0.1.252/24
 ```
 
-## vsClish
+## vsClish.sh
 Lets you run commands in clish (like `clish -c "..."`) in VSs other
 than 0. Specify a VSID as the first argument to run the commands in
 another VS without switching to it. Leave out the VSID to use the VSID
@@ -120,3 +120,18 @@ Here's an example script I use which gets the hostname, model, major version, ju
         SomeCMA     10.12.4.198: SecondCluster-02            6800 R81.20  92 14:25:27 up 27 days 
 ...
 ```
+
+## verifyAll.sh
+Verifies all policy packages on a management server. If you run it on an
+MDS, it verifies all policy packages on all CMAs.
+
+My current process for decommissioning old systems involves replacing
+the objects for the old systems with "None". This results in empty
+groups, and an empty group in a rule fails verification (and since
+verification is required before pushing, it also breaks the ability to
+push). I wrote this to run at the end of the day after handling all the
+decoms to see what policies they broke.
+
+If you have policy packages which are expected to fail verification, you
+can make the script ignore them. Just add a `grep -v "<policy name>" \`
+after the `| jq -c '.packages[]|.name' \` line.
