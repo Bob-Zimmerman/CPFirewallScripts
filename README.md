@@ -32,25 +32,32 @@ Usage:
 Iterates through all of the interfaces on a firewall and does an ARP
 sweep of each one (using ping to trigger ARP). It then reports which
 interfaces' networks are empty. It looks at all interfaces with names
-which do not start with 'lo' or 'wrp'.
+which do not start with 'lo' or 'wrp'. It skips interfaces which don't
+have an IP address and logs the skip to STDERR. If you write the output
+to a file, you get only the interfaces which have IP addresses in the
+file.
 
 ### Usage
 ```
 [Expert@MyFirewall-s01-01]# ./scanInts.sh 
 Mgmt has no IP address. Skipping.
-2 items in Sync 192.0.2.1/24
+1 other items in 192.0.2.0/24 on Sync
 bond2 has no IP address. Skipping.
-1 items in bond2.100 172.31.100.1/24
-1 items in bond2.101 172.31.101.1/24
+0 other items in 172.31.100.0/24 on bond2.100
+0 other items in 172.31.101.0/24 on bond2.101
 erspan0 has no IP address. Skipping.
 eth1-Sync has no IP address. Skipping.
 eth2 has no IP address. Skipping.
 eth3 has no IP address. Skipping.
 eth4 has no IP address. Skipping.
 eth5 has no IP address. Skipping.
-gre0 has no IP address. Skipping.
-gretap0 has no IP address. Skipping.
-4 items in magg1 10.0.1.252/24
+3 other items in 10.0.1.0/24 on magg1
+
+[Expert@MyFirewall-s01-01:0]# ./scanInts.sh 2>/dev/null
+1 other items in 192.0.2.0/24 on Sync
+0 other items in 172.31.100.0/24 on bond2.100
+0 other items in 172.31.101.0/24 on bond2.101
+3 other items in 10.0.1.0/24 on magg1
 ```
 
 ## vsClish.sh
