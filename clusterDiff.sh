@@ -1,4 +1,20 @@
 #!/bin/env bash
+########################################################################
+## Runs a script you provide on each member of every cluster reporting
+## to the management where it is run, then uses diff to find differences
+## in the output. You can specify your own script after
+## 
+### cat << 'EOF' > "${scriptFile}"
+## 
+## and before the line which has 'EOF' by itself. The script I have
+## provided there dumps the clish config and finds differences. It works
+## on normal clusters and VSX clusters. NOTE: This does not support
+## ElasticXL and does not work on clusters with more than two members.
+## 
+## If you write your own script, it should write its output to
+## /tmp/clusterDiff.output on the firewalls.
+########################################################################
+
 scriptFile=$(mktemp)
 cat << 'EOF' > "${scriptFile}"
 echo "" >/tmp/clusterDiff.output
@@ -44,8 +60,8 @@ echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-" \
 done
 EOF
 
-unset cmaList cmaAddress
 . /etc/profile.d/CP.sh
+
 # Check to be sure the management API is running. If not, restart it.
 api status >/dev/null 2>/dev/null
 [ "$?" != "0" ] && api start >/dev/null

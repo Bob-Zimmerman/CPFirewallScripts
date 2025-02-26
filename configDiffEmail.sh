@@ -1,6 +1,11 @@
 #!/bin/env bash
-MTA=<name or IP>
-mailRecipients=<addresses>
+########################################################################
+## A simple wrapper to email the cluster member differences through the
+## mail relay defined in MTA to the email addresses in mailRecipients.
+########################################################################
+
+MTA="mail.mycompany.example"
+mailRecipients="FirewallAlerts@mycompany.example; SecondAddress@mycompany.example"
 
 configDiffs=""
 printf "From: diff@$(hostname)

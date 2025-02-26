@@ -11,7 +11,7 @@
 ## them. They stay around as 'incomplete', cluttering up the table. If
 ## we don't slow down, they eventually fill the table and prevent new
 ## entries from being added.
-################################################################################
+########################################################################
 . /etc/profile.d/vsenv.sh
 
 dottedToNumber()

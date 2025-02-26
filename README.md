@@ -101,6 +101,9 @@ provided there dumps the clish config and finds differences. It works on
 normal clusters and VSX clusters. NOTE: This does not support ElasticXL
 and does not work on clusters with more than two members.
 
+If you write your own script, it should write its output to
+/tmp/clusterDiff.output on the firewalls.
+
 ## configDiffEmail.sh
 A simple wrapper to email the cluster member differences through the
 mail relay defined in `MTA` to the email addresses in `mailRecipients`.
