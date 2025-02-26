@@ -123,9 +123,8 @@ document which explains which policies we push when.
 
 If sends an email when it starts to tell you it is pushing the policies.
 Once the pushes have finished, you get a summary of the results. Right
-now, the summary only includes success or failure, and the count of
-errors, warnings, and so on. If a push fails, it does not include the
-error message.
+now, the summary includes success or failure, the count of
+errors/warnings/etc., and any error messages.
 
 ## clusterDiff.sh
 Runs a script you provide on each member of every cluster reporting to
