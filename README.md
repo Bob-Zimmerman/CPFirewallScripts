@@ -92,6 +92,41 @@ Done.
 ```
 
 # For Management Servers
+I store all of these scripts in /var/log/scripts on my management
+servers. If you want to put them somewhere else, be sure to check for
+static paths in the scripts.
+
+I try to put variables which you need to customize for your environment
+towards the top of the scripts, and I try to keep them as simple
+assignments at the top level (no indentation).
+
+## autoPush_Dev-QA.sh
+An example of a script I use to set up a push window for autoPushWorker.
+You will need to change almost everything in this script. I make a copy
+of this script for each set of policies I want to push together. If you
+want to separate pushes to one datacenter from pushes to another
+datacenter, just make a separate window script for each of them. Here's
+an example clish cronjob:
+
+`add cron job autoPush_Dev_QA command "/var/log/scripts/autoPush_Dev-QA.sh" recurrence weekly days 1,2,3,4,5 time 13:00`
+
+You can suspend pushes to the whole management (e.g, during a change
+freeze) by creating the file `/suspendPushes`, or to a single firewall
+(e.g, while upgrading that firewall) by creating the file
+`/suspend_<firewall name>`. Note these file names are case-sensitive.
+
+## autoPushWorker.sh
+Takes mail information and push window configuration from a script like
+autoPush_Dev-QA.sh and executes the pushes. The only customization this
+one should need is the documentationUrl. In my environment, I use a
+document which explains which policies we push when.
+
+If sends an email when it starts to tell you it is pushing the policies.
+Once the pushes have finished, you get a summary of the results. Right
+now, the summary only includes success or failure, and the count of
+errors, warnings, and so on. If a push fails, it does not include the
+error message.
+
 ## clusterDiff.sh
 Runs a script you provide on each member of every cluster reporting to
 the management where it is run, then uses diff to find differences in
@@ -102,7 +137,7 @@ normal clusters and VSX clusters. NOTE: This does not support ElasticXL
 and does not work on clusters with more than two members.
 
 If you write your own script, it should write its output to
-/tmp/clusterDiff.output on the firewalls.
+`/tmp/clusterDiff.output` on the firewalls.
 
 ## configDiffEmail.sh
 A simple wrapper to email the cluster member differences through the
@@ -113,7 +148,8 @@ Takes a file you provide, copies it to all firewalls reporting to this
 management server, runs it, and shows the output.
 
 ### Usage
-Here's an example script I use which gets the hostname, model, major version, jumbo, and uptime.
+Here's an example script I use which gets the hostname, model, major
+version, jumbo, and uptime.
 ```
 [Expert@MyMDS]# cat <<'EOF' >"${scriptFile}"
 > printf "%-25s %6s %-6s %3s %-20s" \
