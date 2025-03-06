@@ -166,6 +166,22 @@ version, jumbo, and uptime.
 ...
 ```
 
+The -v switch causes the first two columns (domain name on an MDS, or
+management name on a non-multi-domain system, and main IP address of the
+system it is working on). Without -v, you only get output from the
+remote systems. It makes the onEachFirewall script itself more verbose,
+which allows the output to potentially be more concise. When using it,
+the output from the remote system *should not* end in a newline. If
+every other line is blank, the script you are running probably includes
+a newline at the end.
+
+Errors also take a slightly different form with -v. When the script
+fails to connect to a remote system via CPRID, -v prints "Couldn't
+connect via CPRID", relying on the CMA name and main IP address printed
+by the -v to identify which system couldn't be reached. Without -v, a
+CPRID connectivity issue prints "\<address>	Couldn't connect via
+CPRID".
+
 ## verifyAll.sh
 Verifies all policy packages on a management server. If you run it on an
 MDS, it verifies all policy packages on all CMAs.
