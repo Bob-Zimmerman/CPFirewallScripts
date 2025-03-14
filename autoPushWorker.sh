@@ -118,9 +118,10 @@ portNumber=$(api status | grep "APACHE Gaia Port" | awk '{print $NF}')
 
 pushPolicy() {
 pushJson=$( mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "$1" targets "$2" threat-prevention false 2>/dev/null )
+echo "${pushJson}" >/tmp/"push_${1}_${2}.json"
 pushStatus=$( jq -c '.tasks[0]|.status' <<<"$pushJson" | sed 's#"##g' )
 pushWarnings=$( jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' <<<"$pushJson" | sed -E 's/^\[\]$//' )
-pushErrors=$( jq '.tasks[]."task-details"[]?.stagesInfo[]?|select(.type == "err").messages[]?.message' <<<"$pushJson" )
+pushErrors=$( jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message' <<<"$pushJson" )
 echo "$pushStatus: ${1} -> ${2}${pushWarnings:+, $pushWarnings}"
 if [ "" != "${pushErrors}" ];then
 echo "${pushErrors}\n"
