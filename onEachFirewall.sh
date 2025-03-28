@@ -36,11 +36,18 @@ done
 
 shift $((OPTIND - 1))
 scriptFile="$1"
-if [ "" == "$scriptFile" ];then
-echo "ERROR: You must specify a file containing the script you want to send to the firewalls."
+if [ "" == "${scriptFile}" ];then
+echo >&2 "ERROR: You must specify a file containing the script you want to send to the firewalls."
 echo ""
 printUsage
 exit 1
+fi
+
+if [ ! -s "${scriptFile}" ];then
+echo >&2 "ERROR: The script file must exist and must not be empty."
+echo ""
+printUsage
+exit 2
 fi
 
 . /etc/profile.d/CP.sh
