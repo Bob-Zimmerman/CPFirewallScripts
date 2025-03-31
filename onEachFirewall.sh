@@ -20,13 +20,13 @@ while getopts "vh" COMMAND_OPTION; do
 		exit 0
 		;;
 	\?)
-		echo "ERROR: Invalid option: -$OPTARG" >&2
+		echo >&2 "ERROR: Invalid option: -$OPTARG"
 		echo ""
 		printUsage
 		exit 1
 		;;
 	:)
-		echo "ERROR: Option -$OPTARG requires an argument." >&2
+		echo >&2 "ERROR: Option -$OPTARG requires an argument."
 		echo ""
 		printUsage
 		exit 1
@@ -93,6 +93,6 @@ if [ "true" = "${verboseOut}" ];then printf "%15s %15s: " "${cmaName}" "${firewa
 cprid_util -server "${firewall}" putfile -local_file "${scriptFile}" -remote_file "${scriptFile}" -perms 500
 if [ "$?" = "0" ];then
 cprid_util -verbose -server "${firewall}" rexec -rcmd sh -c "${scriptFile};/bin/rm ${scriptFile} >/dev/null 2>/dev/null"
-elif [ "true" = "${verboseOut}" ];then >&2 printf "Couldn't connect via CPRID\n"
-else >&2 printf "${firewall}\tCouldn't connect via CPRID\n";fi
+elif [ "true" = "${verboseOut}" ];then printf >&2 "Couldn't connect via CPRID\n"
+else printf >&2 "${firewall}\tCouldn't connect via CPRID\n";fi
 done;done

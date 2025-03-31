@@ -27,7 +27,7 @@ if [ $# -eq 0 ]; then
 fi
 
 if [ $EUID -ne 0 ]; then
-	echo "ERROR: This script must be run as root." >&2
+	echo >&2 "ERROR: This script must be run as root."
 	echo ""
 	printUsage
 	exit 1
@@ -72,13 +72,13 @@ while getopts "lxv:s:S:d:D:P:h" NUKE_OPTION; do
 		exit 0
 		;;
 	\?)
-		echo "ERROR: Invalid option: -$OPTARG" >&2
+		echo >&2 "ERROR: Invalid option: -$OPTARG"
 		echo ""
 		printUsage
 		exit 1
 		;;
 	:)
-		echo "ERROR: Option -$OPTARG requires an argument." >&2
+		echo >&2 "ERROR: Option -$OPTARG requires an argument."
 		echo ""
 		printUsage
 		exit 1

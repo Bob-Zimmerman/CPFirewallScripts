@@ -67,13 +67,13 @@ while getopts "m:M:w:d:h" COMMAND_OPTION; do
 		exit 0
 		;;
 	\?)
-		echo "ERROR: Invalid option: -$OPTARG" >&2
+		echo >&2 "ERROR: Invalid option: -$OPTARG"
 		echo ""
 		printUsage
 		exit 1
 		;;
 	:)
-		echo "ERROR: Option -$OPTARG requires an argument." >&2
+		echo >&2 "ERROR: Option -$OPTARG requires an argument."
 		echo ""
 		printUsage
 		exit 1
@@ -87,22 +87,22 @@ firewallPolicyPairs=($@)
 ############################################################
 # Check for the mandatory arguments.
 if [ "${MTA}" == "" ];then
-	echo "ERROR: -m <MTA> is mandatory." >&2
+	echo >&2 "ERROR: -m <MTA> is mandatory."
 	echo ""
 	printUsage
 	exit 1
 elif [ "${mailRecipients}" == "" ];then
-	echo "ERROR: -M <emails> is mandatory." >&2
+	echo >&2 "ERROR: -M <emails> is mandatory."
 	echo ""
 	printUsage
 	exit 1
 elif [ "${windowName}" == "" ];then
-	echo "ERROR: -w <name> is mandatory." >&2
+	echo >&2 "ERROR: -w <name> is mandatory."
 	echo ""
 	printUsage
 	exit 1
 elif [ "${#firewallPolicyPairs}" == "0" ];then
-	echo "ERROR: You must provide at least one <policy@firewall> item to push." >&2
+	echo >&2 "ERROR: You must provide at least one <policy@firewall> item to push."
 	echo ""
 	printUsage
 	exit 1
