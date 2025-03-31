@@ -13,11 +13,11 @@ firstResult=$(mgmt_cli ${sharedArguments[@]})
 if [ "${?}" != "0" ];then return 1;fi
 toReturn="$(<<<"${firstResult}" jq -c '.objects[]|.')
 ";objectCount=$(<<<"${firstResult}" jq -c '.total')
-if [ "${objectCount}" -lt 501 ];then <<<"${toReturn}" head -n -1;return 0;fi
+if [ "${objectCount}" -lt 501 ];then echo -n "${toReturn}";return 0;fi
 for offsetVal in $(seq 500 500 "${objectCount}" 2>/dev/null | tr "\n" "${IFS}");do
 toReturn+="$(mgmt_cli ${sharedArguments[@]} offset "${offsetVal}" \
 | jq -c '.objects[]|.')
-";done;<<<"${toReturn}" head -n -1;}
+";done;echo -n "${toReturn}";}
 
 cmaList=$(showAll domains \
 | jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
