@@ -106,7 +106,7 @@ if [ "${OUTPUT}" == "interactive" ]; then
 	read -p "Clear these connections? (yes/[no]) " YN
 	case "${YN}" in
 	[Yy][Ee][Ss])
-		echo "${CONNECTIONS}" | xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
+		<<<"${CONNECTIONS}" xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
 		exit 0
 		;;
 	*)
@@ -117,5 +117,5 @@ if [ "${OUTPUT}" == "interactive" ]; then
 elif [ "${OUTPUT}" == "list" ]; then
 	echo "${CONNECTIONS}"
 elif [ "${OUTPUT}" == "delete" ]; then
-	echo "${CONNECTIONS}" | xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
+	<<<"${CONNECTIONS}" xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
 fi

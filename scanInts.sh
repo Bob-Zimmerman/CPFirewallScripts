@@ -19,10 +19,10 @@ dottedToNumber()
 	## Convert an IP in dotted decimal form to a raw number. It's
 	## possible to do math with numbers, and nightmarish to do it with
 	## dotted decimal IP addresses.
-	first=$(echo "${1}" | cut -d. -f1)
-	second=$(echo "${1}" | cut -d. -f2)
-	third=$(echo "${1}" | cut -d. -f3)
-	fourth=$(echo "${1}" | cut -d. -f4)
+	first=$(<<<"${1}" cut -d. -f1)
+	second=$(<<<"${1}" cut -d. -f2)
+	third=$(<<<"${1}" cut -d. -f3)
+	fourth=$(<<<"${1}" cut -d. -f4)
 	echo "$(( (${first}<<24) + (${second}<<16) + (${third}<<8) + ${fourth} ))"
 	}
 
@@ -33,8 +33,8 @@ scanNetwork()
 	## block, iterates through it, pings each one, waits briefly, then
 	## checks the ARP table to see if something responded. It returns
 	## the number of responses it got.
-	ipAddr=$(dottedToNumber "$(echo "${1}" | cut -d/ -f1)")
-	maskLength=$(echo "${1}" | cut -d/ -f2)
+	ipAddr=$(dottedToNumber "$(<<<"${1}" cut -d/ -f1)")
+	maskLength=$(<<<"${1}" cut -d/ -f2)
 	lowest=$(($ipAddr&0xffffffff<<(32-$maskLength)))
 	highest=$(($lowest+(1<<(32-$maskLength))-2))
 	itemsInNetwork=0
@@ -73,7 +73,7 @@ scanInterfaces()
 	}
 
 for context in $(ip netns list | cut -d' ' -f1 | sort);do
-	vsid=$(echo "${context}" | sed -E "s/CTX0+//")
+	vsid=$(<<<"${context}" sed -E "s/CTX0+//")
 	vsenv "${vsid}" 2>&1 >/dev/null
 	scanInterfaces
 	done

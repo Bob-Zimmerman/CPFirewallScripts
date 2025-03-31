@@ -72,13 +72,13 @@ IFS=$(printf "\377")
 sharedArguments=( --port ${portNumber} -f json ${cmaAddress:+-d} ${cmaAddress:+${cmaAddress}} -r true show "${1}" details-level full limit 500 )
 firstResult=$(mgmt_cli ${sharedArguments[@]})
 if [ "${?}" != "0" ];then return 1;fi
-toReturn="$(echo "${firstResult}" | jq -c '.objects[]|.')
-";objectCount=$(echo "${firstResult}" | jq -c '.total')
-if [ "${objectCount}" -lt 501 ];then echo "${toReturn}" | head -n -1;return 0;fi
+toReturn="$(<<<"${firstResult}" jq -c '.objects[]|.')
+";objectCount=$(<<<"${firstResult}" jq -c '.total')
+if [ "${objectCount}" -lt 501 ];then <<<"${toReturn}" head -n -1;return 0;fi
 for offsetVal in $(seq 500 500 "${objectCount}" 2>/dev/null | tr "\n" "${IFS}");do
 toReturn+="$(mgmt_cli ${sharedArguments[@]} offset "${offsetVal}" \
 | jq -c '.objects[]|.')
-";done;echo "${toReturn}" | head -n -1;}
+";done;<<<"${toReturn}" head -n -1;}
 cmaList=$(showAll domains \
 | jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
 | grep $(hostname) \
@@ -86,8 +86,8 @@ cmaList=$(showAll domains \
 if [ "${#cmaList}" == "0" ];then cmaList=("[\"$(hostname)\",\"\"]");fi
 
 for cmaRow in $cmaList; do
-	cmaName=$(echo "${cmaRow}" | jq '.[0]' | sed 's#"##g')
-	cmaAddress=$(echo "${cmaRow}" | jq '.[1]' | sed 's#"##g')
+	cmaName=$(<<<"${cmaRow}" jq '.[0]' | sed 's#"##g')
+	cmaAddress=$(<<<"${cmaRow}" jq '.[1]' | sed 's#"##g')
 	mdsenv "${cmaAddress}" 2>/dev/null
 	
 	nonVsxList=$(showAll gateways-and-servers \
@@ -102,26 +102,26 @@ for cmaRow in $cmaList; do
 	| xargs -L 1 -r mgmt_cli --port "${portNumber}" -f json -d "${cmaAddress}" -r true show generic-object uid \
 	| jq -c '{clusterName:.name,member:."clusterMembers"[]}')
 	echo "" >/tmp/sedScript
-	for line in $(echo "${vsxClusterListUuids}" | tr ' ' '\n'); do
-		memberUuid=$(echo "${line}" | jq .member)
-		member=$(echo "${memberUuid}" | xargs mgmt_cli --port "${portNumber}" -f json -d "${cmaAddress}" -r true show object details-level full uid | jq -c '.object|{name:.name,address:."ipv4-address"}')
+	for line in $(<<<"${vsxClusterListUuids}" tr ' ' '\n'); do
+		memberUuid=$(<<<"${line}" jq .member)
+		member=$(<<<"${memberUuid}" xargs mgmt_cli --port "${portNumber}" -f json -d "${cmaAddress}" -r true show object details-level full uid | jq -c '.object|{name:.name,address:."ipv4-address"}')
 		echo "s#${memberUuid}#${member}#" >>/tmp/sedScript
 		done
-	vsxList=$(echo "${vsxClusterListUuids}" | sed -f /tmp/sedScript | jq -c '{clusterName:.clusterName,memberName:.member.name,address:.member.address}')
+	vsxList=$(<<<"${vsxClusterListUuids}" sed -f /tmp/sedScript | jq -c '{clusterName:.clusterName,memberName:.member.name,address:.member.address}')
 	
 	firewallList=$(echo "${nonVsxList[@]}";echo "${vsxList[@]}")
 	
-	clusterList=($(echo "${firewallList}" | jq -c ".clusterName" | sort | uniq | sed 's#"##g'))
+	clusterList=($(<<<"${firewallList}" jq -c ".clusterName" | sort | uniq | sed 's#"##g'))
 	for clusterName in "${clusterList[@]}"; do
-		for firewallLine in $(echo "${firewallList}" | grep "${clusterName}"); do
-			memberName="$(echo "${firewallLine}" | jq '.memberName' | sed 's#"##g')"
-			firewall="$(echo "${firewallLine}" | jq '.address' | sed 's#"##g')"
+		for firewallLine in $(<<<"${firewallList}" grep "${clusterName}"); do
+			memberName="$(<<<"${firewallLine}" jq '.memberName' | sed 's#"##g')"
+			firewall="$(<<<"${firewallLine}" jq '.address' | sed 's#"##g')"
 			/bin/rm "/tmp/${clusterName}-${memberName}.output" 2>/dev/null
 			cprid_util -server "${firewall}" putfile -local_file "${scriptFile}" -remote_file "${scriptFile}" -perms 500
 			if [ "${?}" == "0" ]; then
 				cprid_util -server "${firewall}" rexec -rcmd sh -c "${scriptFile};/bin/rm ${scriptFile} >/dev/null 2>/dev/null"
 				cprid_util -server "${firewall}" getfile -remote_file /tmp/clusterDiff.output -local_file "/tmp/${clusterName}-${memberName}.output"
-			else >&2 echo "[Couldn't connect to ${memberName} via CPRID]";fi
+			else echo >&2 "[Couldn't connect to ${memberName} via CPRID]";fi
 			done
 		echo "========================================"
 		echo -n "${clusterName}: "

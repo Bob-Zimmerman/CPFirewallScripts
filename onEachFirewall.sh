@@ -62,13 +62,13 @@ IFS=$(printf "\377")
 sharedArguments=( --port ${portNumber} -f json ${cmaAddress:+-d} ${cmaAddress:+${cmaAddress}} -r true show "${1}" details-level full limit 500 )
 firstResult=$(mgmt_cli ${sharedArguments[@]})
 if [ "${?}" != "0" ];then return 1;fi
-toReturn="$(echo "${firstResult}" | jq -c '.objects[]|.')
-";objectCount=$(echo "${firstResult}" | jq -c '.total')
-if [ "${objectCount}" -lt 501 ];then echo "${toReturn}" | head -n -1;return 0;fi
+toReturn="$(<<<"${firstResult}" jq -c '.objects[]|.')
+";objectCount=$(<<<"${firstResult}" jq -c '.total')
+if [ "${objectCount}" -lt 501 ];then <<<"${toReturn}" head -n -1;return 0;fi
 for offsetVal in $(seq 500 500 "${objectCount}" 2>/dev/null | tr "\n" "${IFS}");do
 toReturn+="$(mgmt_cli ${sharedArguments[@]} offset "${offsetVal}" \
 | jq -c '.objects[]|.')
-";done;echo "${toReturn}" | head -n -1;}
+";done;<<<"${toReturn}" head -n -1;}
 
 cmaList=$(showAll domains \
 | jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
@@ -77,8 +77,8 @@ cmaList=$(showAll domains \
 if [ "${#cmaList}" == "0" ];then cmaList=("[\"$(hostname)\",\"\"]");fi
 
 for cmaRow in $cmaList;do
-cmaName=$(echo "${cmaRow}" | jq '.[0]' | sed 's#"##g')
-cmaAddress=$(echo "${cmaRow}" | jq '.[1]' | sed 's#"##g')
+cmaName=$(<<<"${cmaRow}" jq '.[0]' | sed 's#"##g')
+cmaAddress=$(<<<"${cmaRow}" jq '.[1]' | sed 's#"##g')
 mdsenv "${cmaAddress}" 2>/dev/null
 firewallList=$(showAll gateways-and-servers \
 | jq -c '{type:.type,address:."ipv4-address"}' \
