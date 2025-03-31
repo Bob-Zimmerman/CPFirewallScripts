@@ -59,7 +59,7 @@ scanInterfaces()
 		do
 		## Get the local interface routes.
 		routes=$(ip route show | grep " ${interfaceToScan} " | grep -v "via" | cut -d' ' -f1)
-		if [ "" = "${routes[@]}" ];then
+		if [ "" == "${routes[@]}" ];then
 			# If there are no local routes for this interface, bail early.
 			echo >&2 "${interfaceToScan}${vsid:+ in NSID ${vsid}} has no IP address. Skipping."
 			continue

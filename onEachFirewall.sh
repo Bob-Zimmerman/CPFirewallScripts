@@ -89,10 +89,10 @@ firewallList=$(showAll gateways-and-servers \
 | jq -c '.address' \
 | sed 's#"##g')
 for firewall in $firewallList;do
-if [ "true" = "${verboseOut}" ];then printf "%15s %15s: " "${cmaName}" "${firewall}";fi
+if [ "true" == "${verboseOut}" ];then printf "%15s %15s: " "${cmaName}" "${firewall}";fi
 cprid_util -server "${firewall}" putfile -local_file "${scriptFile}" -remote_file "${scriptFile}" -perms 500
 if [ "${?}" == "0" ];then
 cprid_util -verbose -server "${firewall}" rexec -rcmd sh -c "${scriptFile};/bin/rm ${scriptFile} >/dev/null 2>/dev/null"
-elif [ "true" = "${verboseOut}" ];then printf >&2 "Couldn't connect via CPRID\n"
+elif [ "true" == "${verboseOut}" ];then printf >&2 "Couldn't connect via CPRID\n"
 else printf >&2 "${firewall}\tCouldn't connect via CPRID\n";fi
 done;done

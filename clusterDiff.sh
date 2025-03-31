@@ -127,12 +127,12 @@ for cmaRow in $cmaList; do
 		echo -n "${clusterName}: "
 		diffOut=$(diff "/tmp/${clusterName}-"* 2>/dev/null)
 		diffExit="${?}"
-		if [ "${diffExit}" = 0 ]; then
+		if [ "${diffExit}" == "0" ]; then
 			echo "NO DIFFERENCES"
-		elif [ "${diffExit}" = "1" ]; then
+		elif [ "${diffExit}" == "1" ]; then
 			echo ""
 			echo "${diffOut}"
-		elif [ "${diffExit}" = "2" ]; then
+		elif [ "${diffExit}" == "2" ]; then
 			echo "Files not found - probably CPRID failure"
 		else
 			echo "ERROR - diff exit code ${diffExit}"
