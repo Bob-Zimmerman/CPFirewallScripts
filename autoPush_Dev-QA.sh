@@ -42,7 +42,7 @@ MTA="mail.mycompany.example"
 
 
 
-if [[ ! "$1" = "" ]]; then
+if [[ "${#}" != "0" ]]; then
 echo "ERROR: This script does not accept any arguments."
 exit 1
 fi

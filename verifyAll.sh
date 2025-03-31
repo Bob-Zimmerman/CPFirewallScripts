@@ -8,13 +8,13 @@ portNumber=$(api status | grep "APACHE Gaia Port" | awk '{print $NF}')
 
 showAll() {
 IFS=$(printf "\377")
-sharedArguments=( --port ${portNumber} -f json ${cmaAddress:+-d} ${cmaAddress:+${cmaAddress}} -r true show "$1" details-level full limit 500 )
+sharedArguments=( --port ${portNumber} -f json ${cmaAddress:+-d} ${cmaAddress:+${cmaAddress}} -r true show "${1}" details-level full limit 500 )
 firstResult=$(mgmt_cli ${sharedArguments[@]})
-if [ $? -ne 0 ];then return 1;fi
+if [ "${?}" != "0" ];then return 1;fi
 toReturn="$(echo "${firstResult}" | jq -c '.objects[]|.')
 ";objectCount=$(echo "${firstResult}" | jq -c '.total')
-if [ "$objectCount" -lt 501 ];then echo "${toReturn}" | head -n -1;return 0;fi
-for offsetVal in $(seq 500 500 "${objectCount}" 2>/dev/null | tr "\n" "$IFS");do
+if [ "${objectCount}" -lt 501 ];then echo "${toReturn}" | head -n -1;return 0;fi
+for offsetVal in $(seq 500 500 "${objectCount}" 2>/dev/null | tr "\n" "${IFS}");do
 toReturn+="$(mgmt_cli ${sharedArguments[@]} offset "${offsetVal}" \
 | jq -c '.objects[]|.')
 ";done;echo "${toReturn}" | head -n -1;}
@@ -23,8 +23,7 @@ cmaList=$(showAll domains \
 | jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
 | grep $(hostname) \
 | jq -c '[.name,.server.ipAddress]')
-
-if [ ${#cmaList} -eq 0 ];then cmaList=("[\"$(hostname)\",\"\"]");fi
+if [ "${#cmaList}" == "0" ];then cmaList=("[\"$(hostname)\",\"\"]");fi
 
 for cmaRow in $cmaList; do
 cmaName=$(echo "${cmaRow}" | jq '.[0]' | sed 's#"##g')

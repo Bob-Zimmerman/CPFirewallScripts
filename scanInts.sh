@@ -19,10 +19,10 @@ dottedToNumber()
 	## Convert an IP in dotted decimal form to a raw number. It's
 	## possible to do math with numbers, and nightmarish to do it with
 	## dotted decimal IP addresses.
-	first=$(echo $1 | cut -d. -f1)
-	second=$(echo $1 | cut -d. -f2)
-	third=$(echo $1 | cut -d. -f3)
-	fourth=$(echo $1 | cut -d. -f4)
+	first=$(echo "${1}" | cut -d. -f1)
+	second=$(echo "${1}" | cut -d. -f2)
+	third=$(echo "${1}" | cut -d. -f3)
+	fourth=$(echo "${1}" | cut -d. -f4)
 	echo "$(( (${first}<<24) + (${second}<<16) + (${third}<<8) + ${fourth} ))"
 	}
 
@@ -33,16 +33,16 @@ scanNetwork()
 	## block, iterates through it, pings each one, waits briefly, then
 	## checks the ARP table to see if something responded. It returns
 	## the number of responses it got.
-	ipAddr=$(dottedToNumber "$(echo $1 | cut -d/ -f1)")
-	maskLength=$(echo $1 | cut -d/ -f2)
+	ipAddr=$(dottedToNumber "$(echo "${1}" | cut -d/ -f1)")
+	maskLength=$(echo "${1}" | cut -d/ -f2)
 	lowest=$(($ipAddr&0xffffffff<<(32-$maskLength)))
 	highest=$(($lowest+(1<<(32-$maskLength))-2))
 	itemsInNetwork=0
 	for scanAddress in $(seq -f "%.0f" $(($lowest+1)) $highest)
 		do
-		ping -c 1 -w 1 $scanAddress 2>&1 >/dev/null &
+		ping -c 1 -w 1 "${scanAddress}" 2>&1 >/dev/null &
 		sleep 0.02s
-		if [ "" != "$(arp -n $scanAddress | egrep -v "(incomplete|no entry|HWaddress)")" ];then
+		if [ "" != "$(arp -n "${scanAddress}" | egrep -v "(incomplete|no entry|HWaddress)")" ];then
 			((itemsInNetwork+=1))
 		fi
 		done
@@ -61,12 +61,12 @@ scanInterfaces()
 		routes=$(ip route show | grep " ${interfaceToScan} " | grep -v "via" | cut -d' ' -f1)
 		if [ "" = "${routes[@]}" ];then
 			# If there are no local routes for this interface, bail early.
-			echo >&2 "${interfaceToScan}${vsid:+ in NSID $vsid} has no IP address. Skipping."
+			echo >&2 "${interfaceToScan}${vsid:+ in NSID ${vsid}} has no IP address. Skipping."
 			continue
 			fi
 		for rawAddr in ${routes[@]};do
 			items="$(scanNetwork "${rawAddr}")"
-			echo "$items other items in ${rawAddr} on ${interfaceToScan}${vsid:+ in NSID $vsid}"
+			echo "${items} other items in ${rawAddr} on ${interfaceToScan}${vsid:+ in NSID ${vsid}}"
 			done
 		sleep 300s
 		done

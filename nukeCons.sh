@@ -5,7 +5,7 @@ printUsage()
 	echo "Note: this script must be run as root."
 	echo ""
 	echo "Usage:"
-	echo "$0 [-l|-x] [-v <VSID>] [-s IP] [-S port] [-d IP] [-D port] [-P protocol]"
+	echo "${0} [-l|-x] [-v <VSID>] [-s IP] [-S port] [-d IP] [-D port] [-P protocol]"
 	echo -e "\t-l\t\tOnly list matching connections. Do not prompt."
 	echo -e "\t-x\t\tDelete matching connections without prompting."
 	echo -e "\t\t\tDefault is to list matches and prompt for deletion."
@@ -21,12 +21,12 @@ printUsage()
 	echo -e "\t-h\t\tPrint this usage information."
 }
 
-if [ $# -eq 0 ]; then
+if [ "${#}" == "0" ]; then
 	printUsage
 	exit 1
 fi
 
-if [ $EUID -ne 0 ]; then
+if [ "${EUID}" != "0" ]; then
 	echo >&2 "ERROR: This script must be run as root."
 	echo ""
 	printUsage
@@ -42,7 +42,7 @@ DEST_PORT="[0-9a-f]+"
 PROTOCOL="[0-9a-f]+"
 
 while getopts "lxv:s:S:d:D:P:h" NUKE_OPTION; do
-	case $NUKE_OPTION in
+	case "${NUKE_OPTION}" in
 	x)
 		OUTPUT="delete"
 		;;
@@ -72,13 +72,13 @@ while getopts "lxv:s:S:d:D:P:h" NUKE_OPTION; do
 		exit 0
 		;;
 	\?)
-		echo >&2 "ERROR: Invalid option: -$OPTARG"
+		echo >&2 "ERROR: Invalid option: -${OPTARG}"
 		echo ""
 		printUsage
 		exit 1
 		;;
 	:)
-		echo >&2 "ERROR: Option -$OPTARG requires an argument."
+		echo >&2 "ERROR: Option -${OPTARG} requires an argument."
 		echo ""
 		printUsage
 		exit 1
@@ -93,20 +93,20 @@ else
 fi
 
 CONNECTIONS=$(\
-	$FW_TAB_CMD -t connections -u \
-	| egrep "<[0-9a-f]+, $SOURCE_ADDR, $SOURCE_PORT, $DEST_ADDR, $DEST_PORT, $PROTOCOL;" \
+	"${FW_TAB_CMD}" -t connections -u \
+	| egrep "<[0-9a-f]+, ${SOURCE_ADDR}, ${SOURCE_PORT}, ${DEST_ADDR}, ${DEST_PORT}, ${PROTOCOL};" \
 	| sed -r 's#<([0-9a-f, ]+);.+#\1#' \
 	| sed -r 's# ##g')
 
-if [ "$OUTPUT" == "interactive" ]; then
+if [ "${OUTPUT}" == "interactive" ]; then
 	echo "Matches:"
-	echo "$CONNECTIONS"
+	echo "${CONNECTIONS}"
 
 	echo ""
 	read -p "Clear these connections? (yes/[no]) " YN
-	case $YN in
+	case "${YN}" in
 	[Yy][Ee][Ss])
-		echo "$CONNECTIONS" | xargs -n 1 $FW_TAB_CMD -t connections -x -e
+		echo "${CONNECTIONS}" | xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
 		exit 0
 		;;
 	*)
@@ -114,8 +114,8 @@ if [ "$OUTPUT" == "interactive" ]; then
 		exit 2
 		;;
 	esac
-elif [ "$OUTPUT" == "list" ]; then
-	echo "$CONNECTIONS"
-elif [ "$OUTPUT" == "delete" ]; then
-	echo "$CONNECTIONS" | xargs -n 1 $FW_TAB_CMD -t connections -x -e
+elif [ "${OUTPUT}" == "list" ]; then
+	echo "${CONNECTIONS}"
+elif [ "${OUTPUT}" == "delete" ]; then
+	echo "${CONNECTIONS}" | xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
 fi

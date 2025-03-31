@@ -33,7 +33,7 @@ documentationUrl="https://github.com/Bob-Zimmerman/CPFirewallScripts"
 printUsage()
 {
 	echo "Usage:"
-	echo "$0 -m <MTA> -M <emails> -w <name> [-d <CMA>] <policy@firewall> ... <policy@firewall>"
+	echo "${0} -m <MTA> -M <emails> -w <name> [-d <CMA>] <policy@firewall> ... <policy@firewall>"
 	echo -e "\t-m <MTA>\t\tSMTP relay to use to send mail"
 	echo -e "\t-M <emails>\t\tList of email recipients"
 	echo -e "\t-w <name>\t\tWindow name to be used in the email messages"
@@ -49,7 +49,7 @@ mdsDomain=""
 pushOutput=""
 
 while getopts "m:M:w:d:h" COMMAND_OPTION; do
-	case $COMMAND_OPTION in
+	case "${COMMAND_OPTION}" in
 	m)
 		MTA="${OPTARG}"
 		;;
@@ -67,13 +67,13 @@ while getopts "m:M:w:d:h" COMMAND_OPTION; do
 		exit 0
 		;;
 	\?)
-		echo >&2 "ERROR: Invalid option: -$OPTARG"
+		echo >&2 "ERROR: Invalid option: -${OPTARG}"
 		echo ""
 		printUsage
 		exit 1
 		;;
 	:)
-		echo >&2 "ERROR: Option -$OPTARG requires an argument."
+		echo >&2 "ERROR: Option -${OPTARG} requires an argument."
 		echo ""
 		printUsage
 		exit 1
@@ -112,17 +112,17 @@ fi
 
 # Check to be sure the management API is running. If not, restart it.
 api status >/dev/null 2>/dev/null
-[ "$?" != "0" ] && api start >/dev/null
+[ "${?}" != "0" ] && api start >/dev/null
 
 portNumber=$(api status | grep "APACHE Gaia Port" | awk '{print $NF}')
 
 pushPolicy() {
-pushJson=$( mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "$1" targets "$2" threat-prevention false 2>/dev/null )
+pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${1}" targets "${2}" threat-prevention false 2>/dev/null)
 echo "${pushJson}" >/tmp/"push_${1}_${2}.json"
-pushStatus=$( jq -c '.tasks[0]|.status' <<<"$pushJson" | sed 's#"##g' )
-pushWarnings=$( jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' <<<"$pushJson" | sed -E 's/^\[\]$//' )
-pushErrors=$( jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message' <<<"$pushJson" )
-echo "$pushStatus: ${1} -> ${2}${pushWarnings:+, $pushWarnings}"
+pushStatus=$(<<<"${pushJson}" jq -c '.tasks[0]|.status' | sed 's#"##g')
+pushWarnings=$(<<<"${pushJson}" jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' | sed -E 's/^\[\]$//')
+pushErrors=$(<<<"${pushJson}" jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message')
+echo "${pushStatus}: ${1} -> ${2}${pushWarnings:+, ${pushWarnings}}"
 if [ "" != "${pushErrors}" ];then
 echo "${pushErrors}\n"
 fi
@@ -160,12 +160,12 @@ ${documentationUrl}" \
 ############################################################
 ## Push the policies.
 for fwPolicyPair in "${firewallPolicyPairs[@]}"; do
-policyName=$(cut -d'@' -f1 <<< $fwPolicyPair)
-firewallName=$(cut -d'@' -f2 <<< $fwPolicyPair)
+policyName=$(<<<"${fwPolicyPair}" cut -d'@' -f1 )
+firewallName=$(<<<"${fwPolicyPair}" cut -d'@' -f2)
 if [ -e "/suspend_${firewallName}" ]; then
-pushOutput+="SUSPENDED: $policyName -> $firewallName"
+pushOutput+="SUSPENDED: ${policyName} -> ${firewallName}"
 else
-pushOutput+="$(pushPolicy "$policyName" "$firewallName")"
+pushOutput+="$(pushPolicy "${policyName}" "${firewallName}")"
 fi
 pushOutput+="\n"
 done
