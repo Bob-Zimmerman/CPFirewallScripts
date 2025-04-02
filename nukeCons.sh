@@ -93,7 +93,7 @@ else
 fi
 
 CONNECTIONS=$(\
-	"${FW_TAB_CMD}" -t connections -u \
+	${FW_TAB_CMD} -t connections -u \
 	| egrep "<[0-9a-f]+, ${SOURCE_ADDR}, ${SOURCE_PORT}, ${DEST_ADDR}, ${DEST_PORT}, ${PROTOCOL};" \
 	| sed -r 's#<([0-9a-f, ]+);.+#\1#' \
 	| sed -r 's# ##g')
@@ -106,7 +106,7 @@ if [ "${OUTPUT}" == "interactive" ]; then
 	read -p "Clear these connections? (yes/[no]) " YN
 	case "${YN}" in
 	[Yy][Ee][Ss])
-		<<<"${CONNECTIONS}" xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
+		<<<"${CONNECTIONS}" xargs -n 1 ${FW_TAB_CMD} -t connections -x -e
 		exit 0
 		;;
 	*)
@@ -117,5 +117,5 @@ if [ "${OUTPUT}" == "interactive" ]; then
 elif [ "${OUTPUT}" == "list" ]; then
 	echo "${CONNECTIONS}"
 elif [ "${OUTPUT}" == "delete" ]; then
-	<<<"${CONNECTIONS}" xargs -n 1 "${FW_TAB_CMD}" -t connections -x -e
+	<<<"${CONNECTIONS}" xargs -n 1 ${FW_TAB_CMD} -t connections -x -e
 fi
