@@ -19,23 +19,20 @@
 ## 
 ## To resume scripted pushes, delete the suspend file.
 ## 
-## For an MDS, you must specify the CMA's name in the "mdsDomain"
-## variable. For a SmartCenter, the variable should be an empty string.
-## 
-## The policies and firewalls must be added to the firewallPolicyPairs
-## variable in the form "Policy@Firewall". Each pair should be in quotes
-## and on its own line.
+## The policies, firewalls, and CMAs (if applicable) must be added to
+## the firewallPolicyPairs variable in the form "Policy@Firewall[@CMA]".
+## CMA is optional. If you are using a normal security management, leave
+## it off. Each set should be in quotes and on its own line.
 ########################################################################
 
 windowName="Dev/QA"
 mailRecipients="FirewallAlerts@mycompany.example; ApplicationDevelopers@mycompany.example"
-mdsDomain="Development"
 firewallPolicyPairs=(
-"Lab-Policy@StandingLabFw"
-"Dev-Web-Policy@DevWebFw"
-"QA-Web-Policy@QaWebFw"
-"Dev-App-Policy@DevAppFw"
-"QA-App-Policy@QaAppFw"
+"Lab-Policy@StandingLabFw@Development"
+"Dev-Web-Policy@DevWebFw@Development"
+"QA-Web-Policy@QaWebFw@Development"
+"Dev-App-Policy@DevAppFw@Development"
+"QA-App-Policy@QaAppFw@Development"
 )
 
 MTA="mail.mycompany.example"
@@ -47,4 +44,4 @@ echo "ERROR: This script does not accept any arguments."
 exit 1
 fi
 
-/var/log/scripts/autoPushWorker.sh -m "${MTA}" -M "${mailRecipients}" -w "${windowName}" -d "${mdsDomain}" "${firewallPolicyPairs[@]}"
+/var/log/scripts/autoPushWorker.sh -m "${MTA}" -M "${mailRecipients}" -w "${windowName}" "${firewallPolicyPairs[@]}"

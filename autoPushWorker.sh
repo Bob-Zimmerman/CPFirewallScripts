@@ -21,24 +21,23 @@
 ## 
 ## To resume scripted pushes, delete the suspend file.
 ## 
-## For an MDS, you must specify the domain's name using the '-d <CMA>'
-## switch. For a SmartCenter, you can leave it out.
-## 
-## The policies and firewalls must be added to the firewallPolicyPairs
-## variable in the form "Policy@Firewall". Each pair should be separated
-## by a space.
+## The policies, firewalls, and CMAs (if applicable) must be passed to
+## the script in the form "Policy@Firewall[@CMA]". CMA is optional. If
+## you are using a normal security management, leave it off. Each item
+## should be separated by a space.
 ########################################################################
 documentationUrl="https://github.com/Bob-Zimmerman/CPFirewallScripts"
 
 printUsage()
 {
 	echo "Usage:"
-	echo "${0} -m <MTA> -M <emails> -w <name> [-d <CMA>] <policy@firewall> ... <policy@firewall>"
+	echo "${0} -m <MTA> -M <emails> -w <name> <policy@firewall[@mgmt]> [... <policy@firewall[@mgmt]>]"
 	echo -e "\t-m <MTA>\t\tSMTP relay to use to send mail"
 	echo -e "\t-M <emails>\t\tList of email recipients"
 	echo -e "\t-w <name>\t\tWindow name to be used in the email messages"
-	echo -e "\t-d <CMA>\t\tName of the CMA to push from"
-	echo -e "\t<policy@firewall>\tA policy to push and the firewall to push it to"
+	echo -e "\t<policy@fw[@mgmt]>\tA policy to push and the firewall to push it to."
+	echo -e "\t\t\t\tThis may optionally include a CMA name in a"
+	echo -e "\t\t\t\tmulti-domain environment."
 	echo -e "\t-h\t\t\tPrint this usage information."
 }
 
@@ -48,7 +47,7 @@ windowName=""
 mdsDomain=""
 pushOutput=""
 
-while getopts "m:M:w:d:h" COMMAND_OPTION; do
+while getopts "m:M:w:h" COMMAND_OPTION; do
 	case "${COMMAND_OPTION}" in
 	m)
 		MTA="${OPTARG}"
@@ -58,9 +57,6 @@ while getopts "m:M:w:d:h" COMMAND_OPTION; do
 		;;
 	w)
 		windowName="${OPTARG}"
-		;;
-	d)
-		mdsDomain="${OPTARG}"
 		;;
 	h)
 		printUsage
@@ -117,14 +113,20 @@ api status >/dev/null 2>/dev/null
 portNumber=$(api status | grep "APACHE Gaia Port" | awk '{print $NF}')
 
 pushPolicy() {
-pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${1}" targets "${2}" threat-prevention false 2>/dev/null)
-echo "${pushJson}" >/tmp/"push_${1}_${2}.json"
+policyName="$(<<<"${1}" cut -d'@' -f1 )"
+firewallName="$(<<<"${1}" cut -d'@' -f2)"
+mdsDomain="$(<<<"${1}" cut -d'@' -f3)"
+if [ -e "/suspend_${firewallName}" ]; then
+echo "SUSPENDED: ${policyName} -> ${firewallName}${mdsDomain:+ @ $mdsDomain}"
+return;fi
+pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${policyName}" targets "${firewallName}" threat-prevention false 2>/dev/null)
+echo "${pushJson}" >/tmp/"push_${policyName}_${firewallName}.json"
 pushStatus=$(<<<"${pushJson}" jq -c '.tasks[0]|.status' | sed 's#"##g')
 pushWarnings=$(<<<"${pushJson}" jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' | sed -E 's/^\[\]$//')
 pushErrors=$(<<<"${pushJson}" jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message')
-echo "${pushStatus}: ${1} -> ${2}${pushWarnings:+, ${pushWarnings}}"
+echo "${pushStatus}: ${policyName} -> ${firewallName}${mdsDomain:+ @ $mdsDomain}${pushWarnings:+, ${pushWarnings}}"
 if [ "" != "${pushErrors}" ];then
-echo "${pushErrors}\n"
+echo -e "${pushErrors}\n"
 fi
 }
 
@@ -159,15 +161,8 @@ ${documentationUrl}" \
 
 ############################################################
 ## Push the policies.
-for fwPolicyPair in "${firewallPolicyPairs[@]}"; do
-policyName=$(<<<"${fwPolicyPair}" cut -d'@' -f1 )
-firewallName=$(<<<"${fwPolicyPair}" cut -d'@' -f2)
-if [ -e "/suspend_${firewallName}" ]; then
-pushOutput+="SUSPENDED: ${policyName} -> ${firewallName}"
-else
-pushOutput+="$(pushPolicy "${policyName}" "${firewallName}")"
-fi
-pushOutput+="\n"
+for fwPolicyLine in "${firewallPolicyPairs[@]}"; do
+pushOutput+="$(pushPolicy "${fwPolicyLine}")\n"
 done
 
 ############################################################
