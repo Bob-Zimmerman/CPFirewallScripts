@@ -31,16 +31,16 @@ clish -if /tmp/script.clish \
 
 grep "set interface" /tmp/clishConfig.txt \
 | grep ipv4-address \
-| sed -E "s/set interface ([^ ]+) ipv4-address ([^ ]+) mask.*$/s@ \2( .*|$)@ \#\1 IPv4\#\\\1@g/" \
+| sed -E "s%set interface ([^ ]+) ipv4-address ([^ ]+) mask.*$%s@ \2( .*|/|$)@ \#\1 IPv4\#\\\1@g%" \
 >/tmp/sedScript.txt
 
 grep "set interface" /tmp/clishConfig.txt \
 | grep ipv6-address \
-| sed -E "s/set interface ([^ ]+) ipv6-address ([^ ]+) mask.*$/s@ \2( .*|$)@ \#\1 IPv6\#\\\1@g/" \
+| sed -E "s%set interface ([^ ]+) ipv6-address ([^ ]+) mask.*$%s@ \2( .*|/|$)@ \#\1 IPv6\#\\\1@g%" \
 >>/tmp/sedScript.txt
 
 grep "type numbered local" /tmp/clishConfig.txt \
-| sed -E "s/add vpn tunnel ([^ ]+) type numbered local ([^ ]+) .*$/s@ \2( .*|$)@ \#VTI \1 IPv4\#\\\1@g/" \
+| sed -E "s%add vpn tunnel ([^ ]+) type numbered local ([^ ]+) .*$%s@ \2( .*|/|$)@ \#VTI \1 IPv4\#\\\1@g%" \
 >>/tmp/sedScript.txt
 
 sed -Ef /tmp/sedScript.txt /tmp/clishConfig.txt \
