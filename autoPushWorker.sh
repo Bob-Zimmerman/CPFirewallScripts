@@ -46,6 +46,8 @@ mailRecipients=""
 windowName=""
 mdsDomain=""
 pushOutput=""
+runningOnMds=false
+recordSeparator=$(awk 'BEGIN {print "\036"}')
 
 while getopts "m:M:w:h" COMMAND_OPTION; do
 	case "${COMMAND_OPTION}" in
@@ -104,6 +106,12 @@ elif [ "${#firewallPolicyPairs}" == "0" ];then
 	exit 1
 fi
 
+for offset in $(seq 0 $(("${#firewallPolicyPairs[@]}" - 1)));do
+if [ "" != "$(<<<"${firewallPolicyPairs[${offset}]}" cut -d'@' -f3)" ];then
+runningOnMds=true
+fi
+done
+
 . /etc/profile.d/CP.sh
 
 # Check to be sure the management API is running. If not, restart it.
@@ -117,17 +125,24 @@ policyName="$(<<<"${1}" cut -d'@' -f1 )"
 firewallName="$(<<<"${1}" cut -d'@' -f2)"
 mdsDomain="$(<<<"${1}" cut -d'@' -f3)"
 if [ -e "/suspend_${firewallName}" ]; then
-echo "SUSPENDED: ${policyName} -> ${firewallName}${mdsDomain:+ @ $mdsDomain}"
-return;fi
+pushJson="{}"
+pushStatus="SUSPENDED"
+else
 pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${policyName}" targets "${firewallName}" threat-prevention false 2>/dev/null)
 echo "${pushJson}" >/tmp/"push_${policyName}_${firewallName}.json"
 pushStatus=$(<<<"${pushJson}" jq -c '.tasks[0]|.status' | sed 's#"##g')
-pushWarnings=$(<<<"${pushJson}" jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' | sed -E 's/^\[\]$//')
-pushErrors=$(<<<"${pushJson}" jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message')
-echo "${pushStatus}: ${policyName} -> ${firewallName}${mdsDomain:+ @ $mdsDomain}${pushWarnings:+, ${pushWarnings}}"
-if [ "" != "${pushErrors}" ];then
-echo -e "${pushErrors}\n"
 fi
+pushWarnings=$(<<<"${pushJson}" jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' | sed -E 's/^\[\]$//')
+pushErrors=$(<<<"${pushJson}" jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message' | tr '\n' "${recordSeparator}" | sed "s@${recordSeparator}@<br />@g" | sed 's@<br />$@@')
+echo -n "<tr>"
+$runningOnMds && echo -n "<td>${mdsDomain}</td>"
+echo -n "<td>${policyName}</td>"
+echo -n "<td>${firewallName}</td>"
+echo -n "<td>${pushStatus}</td>"
+echo -n "<td>"
+echo -n "${pushWarnings:+${pushWarnings}}"
+echo -n "${pushErrors:+<br />${pushErrors}}"
+echo "</td></tr>"
 }
 
 ############################################################
@@ -170,7 +185,26 @@ done
 printf "From: root@$(hostname)
 To: ${mailRecipients}
 Subject: Pushing \"${windowName}\"
-Policy pushes for the window \"${windowName}\" are complete. The results:
+Content-Type: text/html; charset=\"UTF-8\"
+Content-Transfer-Encoding: quoted-printable
+<html><head><style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  padding: 4px;
+}
+th {
+	font-weight: bold;
+}
+</style></head><body>
+<p>Policy pushes for the window \"${windowName}\" are complete. The results:</p>
 
-${pushOutput}" \
+<table>
+<thead><tr>$($runningOnMds && echo -n "<th>Domain</th>")<th>Policy</th><th>Firewall</th><th>Status</th><th>Notes</th></tr></thead>
+<tbody>
+${pushOutput}
+</tbody>
+</table>
+</body></html>
+" \
 | /sbin/sendmail --host="${MTA}" --read-envelope-from -t
