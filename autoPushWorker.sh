@@ -148,7 +148,7 @@ echo "</td></tr>"
 ############################################################
 ## Test for management-wide suspension and notify if present.
 if [ -e /suspendPushes ]; then
-printf "From: root@$(hostname)
+printf "From: autoPush@$(hostname)
 To: ${mailRecipients}
 Subject: Automatic pushes suspended on $(hostname)
 The file /suspendPushes exists on the management server. All automated pushes from this management server are suspended.
@@ -164,7 +164,7 @@ fi
 
 ############################################################
 ## Send a notice the push is starting.
-printf "From: root@$(hostname)
+printf "From: autoPush@$(hostname)
 To: ${mailRecipients}
 Subject: Pushing \"${windowName}\"
 Beginning policy pushes for the window \"${windowName}\". Another email will be sent when the pushes are complete.
@@ -184,7 +184,7 @@ pushFailures=$(<<<"${pushOutput}" sed -E 's#.+<td>(.*?)</td><td>.*?</td></tr>$#\
 
 ############################################################
 ## Report push status to the admins.
-printf "From: root@$(hostname)
+printf "From: autoPush@$(hostname)
 To: ${mailRecipients}
 Subject: Pushing \"${windowName}\"
 Content-Type: text/html; charset=\"UTF-8\"
