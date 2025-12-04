@@ -179,6 +179,8 @@ ${documentationUrl}" \
 for fwPolicyLine in "${firewallPolicyPairs[@]}"; do
 pushOutput+="$(pushPolicy "${fwPolicyLine}")\n"
 done
+pushOutput=$(echo -e "${pushOutput}" | egrep -v "^$")
+pushFailures=$(<<<"${pushOutput}" sed -E 's#.+<td>(.*?)</td><td>.*?</td></tr>$#\1#' | egrep -cv "^(succeeded|SUSPENDED)$")
 
 ############################################################
 ## Report push status to the admins.
@@ -187,6 +189,7 @@ To: ${mailRecipients}
 Subject: Pushing \"${windowName}\"
 Content-Type: text/html; charset=\"UTF-8\"
 Content-Transfer-Encoding: quoted-printable
+$([ "0" != "${pushFailures}" ] && printf "Importance: high\nX-Priority: 1\n\n")
 <html><head><style>
 table, th, td {
 	border: 1px solid black;
