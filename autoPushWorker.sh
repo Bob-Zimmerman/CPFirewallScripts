@@ -141,7 +141,7 @@ echo -n "<td>${firewallName}</td>"
 echo -n "<td>${pushStatus}</td>"
 echo -n "<td>"
 echo -n "${pushWarnings:+${pushWarnings}}"
-echo -n "${pushErrors:+<br />${pushErrors}}"
+echo -n "${pushErrors:+<br /><br />${pushErrors}}"
 echo "</td></tr>"
 }
 
@@ -189,22 +189,22 @@ Content-Type: text/html; charset=\"UTF-8\"
 Content-Transfer-Encoding: quoted-printable
 <html><head><style>
 table, th, td {
-  border: 1px solid black;
-  border-collapse: collapse;
-  padding: 4px;
+	border: 1px solid black;
+	border-collapse: collapse;
+	padding: 4px;
 }
 th {
 	font-weight: bold;
 }
 </style></head><body>
 <p>Policy pushes for the window \"${windowName}\" are complete. The results:</p>
-
 <table>
 <thead><tr>$($runningOnMds && echo -n "<th>Domain</th>")<th>Policy</th><th>Firewall</th><th>Status</th><th>Notes</th></tr></thead>
 <tbody>
 ${pushOutput}
 </tbody>
 </table>
+<p>For detailed push results, look on $(hostname) at the contents of the file /tmp/push_&lt;Policy&gt;_&lt;Firewall&gt;.json</p>
 </body></html>
 " \
 | /sbin/sendmail --host="${MTA}" --read-envelope-from -t
