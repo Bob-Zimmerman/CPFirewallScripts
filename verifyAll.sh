@@ -3,6 +3,8 @@
 ## Verify all policy packages under a given management.
 ################################################################################
 . /etc/profile.d/CP.sh
+# Check to be sure the management API is running. If not, restart it.
+api status >/dev/null 2>/dev/null || api start >/dev/null
 
 portNumber=$(api status | grep "APACHE Gaia Port" | awk '{print $NF}')
 
