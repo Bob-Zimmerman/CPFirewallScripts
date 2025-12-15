@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 ########################################################################
 ## A simple wrapper to email the cluster member differences through the
 ## mail relay defined in MTA to the email addresses in mailRecipients.

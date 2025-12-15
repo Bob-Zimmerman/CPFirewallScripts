@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 ########################################################################
 ## This script iterates through all of the interfaces on a firewall and
 ## does an ARP sweep of each one (using ping to trigger ARP). It then

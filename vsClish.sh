@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 ################################################################################
 ## Run a given clish command for a particular VS. You can specify the VSID as
 ## the first argument. If you don't specify a VSID, it runs in the current VS.

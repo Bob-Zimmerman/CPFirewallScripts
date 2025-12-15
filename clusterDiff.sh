@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 ########################################################################
 ## Runs a script you provide on each member of every cluster reporting
 ## to the management where it is run, then uses diff to find differences

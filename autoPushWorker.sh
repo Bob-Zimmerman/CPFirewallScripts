@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 ########################################################################
 ## This script pushes a set of policies to a set of firewalls, one at a
 ## time. It is typically called by a separate script for the window,
