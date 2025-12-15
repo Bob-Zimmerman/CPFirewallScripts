@@ -142,6 +142,11 @@ If you write your own script, it should write its output to
 A simple wrapper to email the cluster member differences through the
 mail relay defined in `MTA` to the email addresses in `mailRecipients`.
 
+## findHosts.sh
+Tells you which CMAs on an MDS have host objects for a given IP, and
+what those objects' names are. I wrote this to help with decommissioning
+endpoints in an environment with a lot of CMAs.
+
 ## onEachFirewall.sh
 Takes a file you provide, copies it to all firewalls reporting to this
 management server, runs it, and shows the output.
