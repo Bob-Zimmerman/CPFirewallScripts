@@ -14,8 +14,48 @@
 ## If you write your own script, it should write its output to
 ## /tmp/clusterDiff.output on the firewalls.
 ########################################################################
+documentationUrl="https://github.com/Bob-Zimmerman/CPFirewallScripts"
+
+printUsage()
+{
+	echo "Usage:"
+	echo "${0} [-f <file>]"
+	echo -e "\t-f <file>\t\tUse the script in <file> instead of the default script"
+	echo -e "\t-h\t\t\tPrint this usage information."
+}
+
+while getopts "f:h" COMMAND_OPTION; do
+	case "${COMMAND_OPTION}" in
+	f)
+		sourceScript="${OPTARG}"
+		;;
+	h)
+		printUsage
+		exit 0
+		;;
+	\?)
+		echo >&2 "ERROR: Invalid option: -${OPTARG}"
+		echo ""
+		printUsage
+		exit 1
+		;;
+	:)
+		echo >&2 "ERROR: Option -${OPTARG} requires an argument."
+		echo ""
+		printUsage
+		exit 1
+		;;
+	esac
+done
+
+shift $((OPTIND - 1))
 
 scriptFile=$(mktemp)
+if [ -f "${sourceScript}" ];then
+cp "${sourceScript}" "${scriptFile}"
+else
+# If the admin didn't specify a script or if the specified script
+# doesn't exist, run the default.
 cat << 'EOF' > "${scriptFile}"
 echo "" >/tmp/clusterDiff.output
 vsids=$(ip netns list 2>/dev/null | cut -d" " -f3 | cut -d")" -f1 | sort -n;ls /proc/vrf/ 2>/dev/null | sort -n)
@@ -59,6 +99,7 @@ echo "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-" \
 >>/tmp/clusterDiff.output
 done
 EOF
+fi
 
 . /etc/profile.d/CP.sh
 
@@ -66,6 +107,7 @@ EOF
 api status >/dev/null 2>/dev/null || api start >/dev/null
 
 portNumber=$(api status | grep "APACHE Gaia Port" | awk '{print $NF}')
+
 showAll() {
 IFS=$(printf "\377")
 sharedArguments=( --port ${portNumber} -f json ${cmaAddress:+-d} ${cmaAddress:+${cmaAddress}} -r true show "${1}" details-level full limit 500 )
@@ -78,15 +120,9 @@ for offsetVal in $(seq 500 500 "${objectCount}" 2>/dev/null | tr "\n" "${IFS}");
 toReturn+="$(mgmt_cli ${sharedArguments[@]} offset "${offsetVal}" \
 | jq -c '.objects[]|.')
 ";done;echo -n "${toReturn}";}
-cmaList=$(showAll domains \
-| jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
-| grep $(hostname) \
-| jq -c '[.name,.server.ipAddress]')
-if [ "${#cmaList}" == "0" ];then cmaList=("[\"$(hostname)\",\"\"]");fi
 
-for cmaRow in $cmaList; do
-	cmaName=$(<<<"${cmaRow}" jq '.[0]' | sed 's#"##g')
-	cmaAddress=$(<<<"${cmaRow}" jq '.[1]' | sed 's#"##g')
+function getAllClusterMembersInCma {
+	cmaAddress="$1"
 	mdsenv "${cmaAddress}" 2>/dev/null
 	
 	nonVsxList=$(showAll gateways-and-servers \
@@ -108,9 +144,23 @@ for cmaRow in $cmaList; do
 		done
 	vsxList=$(<<<"${vsxClusterListUuids}" sed -f /tmp/sedScript | jq -c '{clusterName:.clusterName,memberName:.member.name,address:.member.address}')
 	
-	firewallList=$(echo "${nonVsxList[@]}";echo "${vsxList[@]}")
+	echo "${nonVsxList[@]}";echo "${vsxList[@]}"
+}
+
+cmaList=$(showAll domains \
+| jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
+| grep $(hostname) \
+| jq -c '[.name,.server.ipAddress]')
+if [ "${#cmaList}" == "0" ];then cmaList=("[\"$(hostname)\",\"\"]");fi
+
+for cmaRow in $cmaList; do
+	cmaName=$(<<<"${cmaRow}" jq '.[0]' | sed 's#"##g')
+	cmaAddress=$(<<<"${cmaRow}" jq '.[1]' | sed 's#"##g')
+	mdsenv "${cmaAddress}" 2>/dev/null
 	
+	firewallList="$(getAllClusterMembersInCma "${cmaAddress}")"
 	clusterList=($(<<<"${firewallList}" jq -c ".clusterName" | sort | uniq | sed 's#"##g'))
+	
 	for clusterName in "${clusterList[@]}"; do
 		for firewallLine in $(<<<"${firewallList}" grep "${clusterName}"); do
 			memberName="$(<<<"${firewallLine}" jq '.memberName' | sed 's#"##g')"
