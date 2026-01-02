@@ -56,7 +56,7 @@ cmaList=$(showAll domains \
 | jq -c '{name:.name,server:.servers[]|{host:."multi-domain-server",ipAddress:."ipv4-address"}}' \
 | grep "$(hostname)" \
 | jq -c '[.name,.server.ipAddress]')
-if [ "0" == "${#cmaList}" ];then cmaList=("[\"$(hostname)\",\"\"]");fi
+[ "0" == "${#cmaList[@]}" ] && cmaList=("[\"$(hostname)\",\"\"]")
 
 echo "${cmaList[@]}" | while read cmaRow; do
 cmaName=$(<<<"${cmaRow}" jq '.[0]' | sed 's#"##g')
