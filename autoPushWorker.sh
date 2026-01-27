@@ -124,12 +124,28 @@ policyName="$(<<<"${1}" cut -d'@' -f1 )"
 firewallName="$(<<<"${1}" cut -d'@' -f2)"
 mdsDomain="$(<<<"${1}" cut -d'@' -f3)"
 if [ -e "/suspend_${firewallName}" ]; then
-pushJson="{}"
-pushStatus="SUSPENDED"
+	pushJson="{}"
+	pushStatus="SUSPENDED"
 else
-pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${policyName}" targets "${firewallName}" threat-prevention false 2>/dev/null)
-echo "${pushJson}" >/tmp/"push_${policyName}_${firewallName}.json"
-pushStatus=$(<<<"${pushJson}" jq -c '.tasks[0]|.status' | sed 's#"##g')
+	pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${policyName}" targets "${firewallName}" threat-prevention false 2>/dev/null)
+	echo "${pushJson}" >/tmp/"push_${policyName}_${firewallName}.json"
+	pushStatus=$(<<<"${pushJson}" jq -c '.tasks[0]|.status' | sed 's#"##g')
+	case "${pushStatus}" in
+		"succeeded" | "SUSPENDED")
+			;;
+		"null")
+			# This indicates an API crash, so restart the API
+			sleep 5s
+			api status >/dev/null 2>/dev/null || api start >/dev/null
+			;&
+		"" | "failed")
+			# Retry failed pushes
+			mv /tmp/"push_${policyName}_${firewallName}.json" /tmp/"push_failed_${policyName}_${firewallName}.json"
+			pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${policyName}" targets "${firewallName}" threat-prevention false 2>/dev/null)
+			echo "${pushJson}" >/tmp/"push_${policyName}_${firewallName}.json"
+			pushStatus=$(<<<"${pushJson}" jq -c '.tasks[0]|.status' | sed 's#"##g')
+			;;
+	esac
 fi
 pushWarnings=$(<<<"${pushJson}" jq -c '[[.tasks[]."task-details"[].stagesInfo[].messages[]]|group_by(.type)[]|[.[0].type,length]]' | sed -E 's/^\[\]$//')
 pushErrors=$(<<<"${pushJson}" jq '.tasks[]."task-details"[]?.stagesInfo[]?.messages[]?|select(.type == "err").message' | tr '\n' "${recordSeparator}" | sed "s@${recordSeparator}@<br />@g" | sed 's@<br />$@@')
@@ -176,7 +192,7 @@ ${documentationUrl}" \
 ############################################################
 ## Push the policies.
 for fwPolicyLine in "${firewallPolicyPairs[@]}"; do
-pushOutput+="$(pushPolicy "${fwPolicyLine}")\n"
+	pushOutput+="$(pushPolicy "${fwPolicyLine}")\n"
 done
 pushOutput=$(echo -e "${pushOutput}" | egrep -v "^$")
 pushFailures=$(<<<"${pushOutput}" sed -E 's#.+<td>(.*?)</td><td>.*?</td></tr>$#\1#' | egrep -cv "^(succeeded|SUSPENDED)$")
