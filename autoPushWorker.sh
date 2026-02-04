@@ -133,12 +133,12 @@ else
 	case "${pushStatus}" in
 		"succeeded" | "SUSPENDED")
 			;;
-		"null")
+		"" | "null")
 			# This indicates an API crash, so restart the API
 			sleep 5s
 			api status >/dev/null 2>/dev/null || api start >/dev/null
 			;&
-		"" | "failed")
+		"failed")
 			# Retry failed pushes
 			mv /tmp/"push_${policyName}_${firewallName}.json" /tmp/"push_failed_${policyName}_${firewallName}.json"
 			pushJson=$(mgmt_cli --port "${portNumber}" -r true -f json -d "${mdsDomain}" install-policy policy-package "${policyName}" targets "${firewallName}" threat-prevention false 2>/dev/null)
